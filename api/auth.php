@@ -1,7 +1,7 @@
 <?php
 define('ROOT', __DIR__ . '/..');
 define('DATA_DIR', ROOT . '/data');
-require_once ROOT . '/auth.php';
+require_once ROOT . '/auth.php';       // defines APP_URL via __DIR__
 require_once __DIR__ . '/json_helper.php';
 header('Content-Type: application/json; charset=utf-8');
 
@@ -21,19 +21,20 @@ if ($method === 'POST' && $action === 'login') {
         json_response(['error' => 'Credenziali non valide'], 401);
 
     session_regenerate_id(true);
-    $_SESSION['user_id']     = $user['user_id'];
-    $_SESSION['role']        = $user['role'];
-    $_SESSION['employee_id'] = $user['employee_id'];
+    $_SESSION['user_id']       = $user['user_id'];
+    $_SESSION['role']          = $user['role'];
+    $_SESSION['employee_id']   = $user['employee_id'];
     $_SESSION['last_activity'] = time();
 
-    // Paths relative to login.php (at app root) — no leading slash
-    $redirect = $user['role'] === 'hr' ? 'hr/dashboard.php' : 'employee/dashboard.php';
+    // APP_URL-based redirect — works in any install subfolder
+    $dest     = $user['role'] === 'hr' ? 'hr/dashboard.php' : 'employee/dashboard.php';
+    $redirect = APP_URL . $dest;
     json_response(['success' => true, 'redirect' => $redirect]);
 }
 
 if ($action === 'logout') {
     session_unset(); session_destroy();
-    json_response(['success' => true, 'redirect' => 'login.php']);
+    json_response(['success' => true, 'redirect' => APP_URL . 'login.php']);
 }
 
 json_response(['error' => 'Azione non valida'], 400);
