@@ -1,5 +1,5 @@
 <?php
-// Included from hr/*.php — links relative to hr/ directory
+// Included from hr/*.php – links relative to hr/ directory
 $cur = basename($_SERVER['PHP_SELF'], '.php');
 ?>
 <nav class="sidebar">
@@ -9,11 +9,13 @@ $cur = basename($_SERVER['PHP_SELF'], '.php');
     <a href="dashboard.php"  class="<?= $cur === 'dashboard'  ? 'active' : '' ?>">&#128202; Dashboard</a>
     <span class="nav-section">Gestione</span>
     <a href="employees.php"  class="<?= $cur === 'employees'  ? 'active' : '' ?>">&#128101; Dipendenti</a>
-    <a href="attendance.php" class="<?= $cur === 'attendance' ? 'active' : '' ?>">&#128336; Presenze</a>
-    <a href="requests.php"   class="<?= $cur === 'requests'   ? 'active' : '' ?>">&#128203; Richieste</a>
+    <a href="attendance.php" class="<?= $cur === 'attendance' ? 'active' : '' ?>">&#128310; Presenze</a>
+    <a href="requests.php"   class="<?= $cur === 'requests'   ? 'active' : '' ?>">&#128195; Richieste</a>
     <a href="sick-leave.php" class="<?= $cur === 'sick-leave' ? 'active' : '' ?>">&#129298; Malattie</a>
     <span class="nav-section">Report</span>
     <a href="reports.php"    class="<?= $cur === 'reports'    ? 'active' : '' ?>">&#128200; Report</a>
   </div>
-  <div class="sidebar-footer">HR Consultant</div>
+  <div class="sidebar-footer">
+    <button class="btn btn-sm btn-secondary" style="width:100%" onclick="openProfileModal()">&#128100; Profilo / Password</button>
+  </div>
 </nav>

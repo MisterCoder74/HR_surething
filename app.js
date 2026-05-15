@@ -27,3 +27,66 @@ function statusBadge(s){const l={pending:'In attesa',approved:'Approvata',reject
 function initDropZone(zid,iid){const z=document.getElementById(zid),inp=document.getElementById(iid);if(!z||!inp)return;z.addEventListener('click',()=>inp.click());z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('dragover');});z.addEventListener('dragleave',()=>z.classList.remove('dragover'));z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;inp.dispatchEvent(new Event('change'));}});inp.addEventListener('change',()=>{const f=inp.files[0];if(f)z.querySelector('.drop-label').textContent=`\uD83D\uDCCE ${f.name}`;});}
 function initTableSearch(iid,bid){const inp=document.getElementById(iid),tb=document.getElementById(bid);if(!inp||!tb)return;inp.addEventListener('input',()=>{const q=inp.value.toLowerCase();tb.querySelectorAll('tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';});});}
 document.addEventListener('DOMContentLoaded',()=>{initTabs();});
+
+/* ── Phase 1 – Profile & Password Change ─────────────────────────────────── */
+async function openProfileModal(){
+  showModal(`
+    <div class="modal-header">
+      <span class="modal-title">&#128100; Profilo</span>
+      <button class="modal-close">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="_prof-info" style="margin-bottom:.5rem"></div>
+      <hr style="margin:1rem 0;border:none;border-top:1px solid var(--border)">
+      <p style="font-weight:600;margin:0 0 .75rem;font-size:.9rem">Cambia password</p>
+      <div class="form-group">
+        <label class="form-label">Password attuale</label>
+        <input type="password" class="form-control" id="_old-pwd" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nuova password <small style="font-weight:400;color:var(--text-light)">(min. 8 caratteri)</small></label>
+        <input type="password" class="form-control" id="_new-pwd" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Conferma nuova password</label>
+        <input type="password" class="form-control" id="_new-pwd2" autocomplete="new-password">
+      </div>
+      <div id="_pwd-err" style="color:var(--danger,#dc3545);font-size:.85rem;margin-top:.25rem;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-dismiss="modal">Annulla</button>
+      <button class="btn btn-primary" id="_pwd-btn">Salva password</button>
+    </div>
+  `);
+
+  // Load current user info
+  try {
+    const u = await apiFetch('../api/users.php');
+    document.getElementById('_prof-info').innerHTML =
+      `<div class="form-group" style="margin-bottom:.5rem"><label class="form-label">Username</label>`+
+      `<input class="form-control" value="${escapeHtml(u.username)}" disabled></div>`+
+      `<div class="form-group" style="margin-bottom:0"><label class="form-label">Ruolo</label>`+
+      `<input class="form-control" value="${escapeHtml(u.role==='hr'?'HR Consultant':'Dipendente')}" disabled></div>`;
+  } catch(_){}
+
+  document.getElementById('_pwd-btn').addEventListener('click', async () => {
+    const old = document.getElementById('_old-pwd').value;
+    const n1  = document.getElementById('_new-pwd').value;
+    const n2  = document.getElementById('_new-pwd2').value;
+    const err = document.getElementById('_pwd-err');
+    const btn = document.getElementById('_pwd-btn');
+    err.style.display = 'none';
+    if (!old||!n1||!n2){ err.textContent='Compila tutti i campi'; err.style.display=''; return; }
+    if (n1!==n2)        { err.textContent='Le password non coincidono'; err.style.display=''; return; }
+    if (n1.length<8)    { err.textContent='Minimo 8 caratteri'; err.style.display=''; return; }
+    setLoading(btn,true);
+    try {
+      await apiFetch('../api/users.php','POST',{action:'change_password',old_password:old,new_password:n1});
+      closeModal();
+      showToast('Password aggiornata con successo','success');
+    } catch(e){
+      err.textContent = e.data?.error ?? 'Errore imprevisto';
+      err.style.display = '';
+    } finally { setLoading(btn,false); }
+  });
+}
