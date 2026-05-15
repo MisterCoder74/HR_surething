@@ -1,0 +1,26 @@
+[
+  {
+    "id": "e001",
+    "nome": "Mario",
+    "cognome": "Rossi",
+    "ruolo": "Sviluppatore Senior",
+    "reparto": "IT",
+    "stato": "attivo"
+  },
+  {
+    "id": "e002",
+    "nome": "Lucia",
+    "cognome": "Bianchi",
+    "ruolo": "UX Designer",
+    "reparto": "IT",
+    "stato": "attivo"
+  },
+  {
+    "id": "e003",
+    "nome": "Andrea",
+    "cognome": "Verdi",
+    "ruolo": "Commerciale",
+    "reparto": "Sales",
+    "stato": "attivo"
+  }
+]

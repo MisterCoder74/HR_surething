@@ -1,0 +1,32 @@
+{
+  "e001": {
+    "anno": 2026,
+    "ferie_totali": 26,
+    "ferie_usate": 0,
+    "ferie_residue": 26,
+    "permessi_totali_ore": 32,
+    "permessi_usati_ore": 0,
+    "permessi_residui_ore": 32,
+    "ultimo_aggiornamento": "2026-01-01T00:00:00Z"
+  },
+  "e002": {
+    "anno": 2026,
+    "ferie_totali": 26,
+    "ferie_usate": 0,
+    "ferie_residue": 26,
+    "permessi_totali_ore": 32,
+    "permessi_usati_ore": 0,
+    "permessi_residui_ore": 32,
+    "ultimo_aggiornamento": "2026-01-01T00:00:00Z"
+  },
+  "e003": {
+    "anno": 2026,
+    "ferie_totali": 22,
+    "ferie_usate": 0,
+    "ferie_residue": 22,
+    "permessi_totali_ore": 32,
+    "permessi_usati_ore": 0,
+    "permessi_residui_ore": 32,
+    "ultimo_aggiornamento": "2026-01-01T00:00:00Z"
+  }
+}

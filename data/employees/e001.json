@@ -1,0 +1,18 @@
+{
+  "id": "e001",
+  "nome": "Mario",
+  "cognome": "Rossi",
+  "email": "mario.rossi@azienda.it",
+  "telefono": "",
+  "data_assunzione": "2024-01-01",
+  "ruolo": "Sviluppatore Senior",
+  "reparto": "IT",
+  "contratto": {
+    "tipo": "tempo_indeterminato",
+    "ore_settimanali": 40,
+    "ferie_annue": 26,
+    "permessi_annui": 32
+  },
+  "stato": "attivo",
+  "note": ""
+}

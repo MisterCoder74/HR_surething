@@ -1,0 +1,25 @@
+{
+  "ore_giornaliere": 8,
+  "giorni_lavorativi_settimana": 5,
+  "orario_ufficio": {
+    "inizio": "08:00",
+    "fine": "17:30"
+  },
+  "smartworking": {
+    "max_giorni_settimana": 2,
+    "preavviso_minimo_giorni": 1
+  },
+  "ferie": {
+    "preavviso_minimo_giorni": 7,
+    "max_giorni_riportabili_anno_successivo": 10
+  },
+  "malattia": {
+    "certificato_obbligatorio_da_giorno": 4
+  },
+  "permessi": {
+    "incremento_orario": 0.5
+  },
+  "sessione": {
+    "timeout_ore": 8
+  }
+}

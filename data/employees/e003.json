@@ -1,0 +1,18 @@
+{
+  "id": "e003",
+  "nome": "Andrea",
+  "cognome": "Verdi",
+  "email": "andrea.verdi@azienda.it",
+  "telefono": "",
+  "data_assunzione": "2024-01-01",
+  "ruolo": "Commerciale",
+  "reparto": "Sales",
+  "contratto": {
+    "tipo": "tempo_indeterminato",
+    "ore_settimanali": 40,
+    "ferie_annue": 22,
+    "permessi_annui": 32
+  },
+  "stato": "attivo",
+  "note": ""
+}

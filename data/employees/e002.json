@@ -1,0 +1,18 @@
+{
+  "id": "e002",
+  "nome": "Lucia",
+  "cognome": "Bianchi",
+  "email": "lucia.bianchi@azienda.it",
+  "telefono": "",
+  "data_assunzione": "2024-01-01",
+  "ruolo": "UX Designer",
+  "reparto": "IT",
+  "contratto": {
+    "tipo": "tempo_indeterminato",
+    "ore_settimanali": 40,
+    "ferie_annue": 26,
+    "permessi_annui": 32
+  },
+  "stato": "attivo",
+  "note": ""
+}
