@@ -130,3 +130,21 @@ tbody tr:hover{background:#f8fafc}
 @media(max-width:768px){.app-layout{grid-template-columns:1fr;grid-template-areas:"topbar" "main"}.sidebar{display:none}.main-content{margin-left:0;padding:16px}.card-grid.cols-4,.card-grid.cols-3{grid-template-columns:1fr 1fr}.card-grid.cols-2,.form-row,.form-row.cols-3{grid-template-columns:1fr}}
 @media(max-width:480px){.card-grid.cols-4,.card-grid.cols-3,.card-grid.cols-2{grid-template-columns:1fr}}
 @media print{.sidebar,.topbar,.btn,.filters-bar{display:none!important}.main-content{margin:0;padding:0}.card{box-shadow:none;border:1px solid #ccc}}
+
+/* ── Attendance Calendar (Phase 3) ─────────────────────────────────────── */
+.att-cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.att-cal-dh{text-align:center;font-size:.75rem;font-weight:600;color:var(--text-light);padding:.35rem 0}
+.att-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.att-cal-cell{min-height:76px;border-radius:8px;border:1.5px solid var(--border);padding:.35rem .45rem;cursor:default;position:relative;transition:border-color .15s,background .15s;box-sizing:border-box}
+.att-cal-cell.has-record,.att-cal-cell[onclick]{cursor:pointer}
+.att-cal-cell[onclick]:hover{background:var(--bg-hover,#f3f4f6)!important;filter:brightness(.97)}
+.att-cal-cell.weekend{background:var(--bg,#f8f9fa)}
+.att-cal-cell.today{border-color:var(--primary)!important;border-width:2px}
+.att-cal-cell.future{opacity:.55}
+.att-cal-cell.empty{border-color:transparent!important}
+.att-cal-day{font-size:.78rem;font-weight:700;color:var(--text-light)}
+.att-cal-cell.today .att-cal-day{color:var(--primary)}
+.att-cal-type{font-size:.7rem;border-radius:4px;padding:2px 5px;color:#fff;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-cal-time{font-size:.66rem;color:var(--text-light);margin-top:2px}
+.att-cal-add{font-size:.85rem;margin-top:4px;opacity:.35;transition:opacity .15s}
+.att-cal-cell[onclick]:hover .att-cal-add{opacity:.9}

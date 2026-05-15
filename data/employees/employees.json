@@ -1,0 +1,11 @@
+[
+  {"employee_id":"e001","user_id":"e001","first_name":"Mario","last_name":"Rossi",
+   "email":"mario.rossi@example.com","role":"Sviluppatore","department":"IT",
+   "contract_type":"indeterminato","hire_date":"2022-01-15","status":"attivo","phone":"","notes":""},
+  {"employee_id":"e002","user_id":"e002","first_name":"Lucia","last_name":"Bianchi",
+   "email":"lucia.bianchi@example.com","role":"Analista","department":"IT",
+   "contract_type":"indeterminato","hire_date":"2021-06-01","status":"attivo","phone":"","notes":""},
+  {"employee_id":"e003","user_id":"e003","first_name":"Andrea","last_name":"Verdi",
+   "email":"andrea.verdi@example.com","role":"Responsabile HR","department":"HR",
+   "contract_type":"indeterminato","hire_date":"2020-03-10","status":"attivo","phone":"","notes":""}
+]
