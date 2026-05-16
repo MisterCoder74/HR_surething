@@ -10,7 +10,7 @@ $emp_map  = [];
 if (file_exists($emp_file)) {
     $emps = json_decode(file_get_contents($emp_file), true) ?? [];
     foreach ($emps as $e) {
-        $emp_map[$e['id']] = ($e['nome'] ?? '') . ' ' . ($e['cognome'] ?? '');
+        $emp_map[$e['employee_id']] = ($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '');
     }
 }
 ?><!DOCTYPE html>
