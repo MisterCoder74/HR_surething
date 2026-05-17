@@ -24,7 +24,7 @@ HR management system for small companies (10–20 employees).
 - [x] Phase 7 — Sick leave: employee declare + upload cert, HR mark received/close, doc_status tracking
 - [x] Phase 8 — Dashboards HR + Employee + Security Hardening (rate limiting, HTTP headers)
 - [x] Phase 9 — Reports + CSV Export: presenze mensili, ferie/permessi, malattie, smartworking; dashboard field-name bug fixed
-- [ ] Phase 10 — UI/UX Polish
+- [x] Phase 10 — UI/UX Polish: mobile responsiveness (hamburger + overlay sidebar), table horizontal scroll, tab bar wrapping, sticky table headers, print styles, smooth transitions, CSV ob_start bug fix
 
 ## File structure
 ```
@@ -33,8 +33,8 @@ HR management system for small companies (10–20 employees).
 ├── login.php               → public login page
 ├── logout.php
 ├── auth.php                → session helpers (require_login, require_hr, require_employee, csrf)
-├── style.css               → global CSS (custom properties, layout, components)
-├── app.js                  → global JS (apiFetch, modals, toasts, calendar helpers)
+├── style.css               → global CSS (custom properties, layout, components, responsive)
+├── app.js                  → global JS (apiFetch, modals, toasts, calendar helpers, responsive sidebar)
 ├── api/
 │   ├── auth.php            → POST login/logout + rate limiting (5 attempts / 15 min)
 │   ├── users.php           → GET profile · POST change_password / reset_password (HR) / list (HR)
