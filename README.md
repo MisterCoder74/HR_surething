@@ -21,7 +21,7 @@ HR management system for small companies (10–20 employees).
 - [x] Phase 4 — HR attendance view + CSV export: edit/add any record, bulk summary, per-employee detail, CSV download
 - [x] Phase 5 — Leave requests (ferie / permessi): employee submit + balance, HR approve/reject with notes
 - [x] Phase 6 — Smartworking requests: employee submit (1 day notice, overlap check), HR approve/reject with notes
-- [ ] Phase 7 — Sick leave + certificates upload
+- [x] Phase 7 — Sick leave: employee declare + upload cert, HR mark received/close, doc_status tracking
 - [ ] Phase 8 — Dashboards (HR + Employee)
 - [ ] Phase 9 — Reports
 - [ ] Phase 10 — UI/UX + Security hardening
@@ -42,13 +42,15 @@ HR management system for small companies (10–20 employees).
 │   ├── employees.php       → GET list/single · POST create / update / deactivate / reactivate
 │   ├── attendance.php      → GET by employee+month · POST save / delete / bulk_summary
 │   ├── leave-requests.php  → GET list/balance · POST submit / cancel / approve / reject
-│   └── smartworking.php    → GET list · POST submit / cancel / approve / reject
+│   ├── smartworking.php    → GET list · POST submit / cancel / approve / reject
+│   └── sick-leave.php      → GET list/download_cert · POST submit / cancel / upload_cert / mark_received / close
 ├── hr/
 │   ├── dashboard.php       → HR home
 │   ├── employees.php       → Employee registry CRUD
 │   ├── attendance.php      → Attendance view + edit + CSV export
 │   ├── requests.php        → Leave/permit requests — approve/reject ✓
 │   ├── smartworking.php    → Smartworking requests — approve/reject ✓ (Phase 6)
+│   └── sick-leave.php      → Sick leave management — mark received/close ✓ (Phase 7)
 │   ├── sick-leave.php      → Sick leave management (Phase 7)
 │   └── reports.php         → Reports (Phase 9)
 ├── employee/
@@ -66,7 +68,9 @@ HR management system for small companies (10–20 employees).
     ├── attendance/{employee_id}.json
     ├── leave_balance/2026.json         → ferie/permessi balances per employee per year
     ├── leave_requests/requests.json    → all leave requests
-    └── smartworking/requests.json      → all smartworking requests (Phase 6)
+    ├── smartworking/requests.json      → all smartworking requests (Phase 6)
+    ├── sick_leave/records.json         → all sick leave records (Phase 7)
+    └── sick_certs/                     → uploaded medical certs (protected, Phase 7)
 ```
 
 ## Setup
@@ -106,3 +110,15 @@ HR management system for small companies (10–20 employees).
 | POST `cancel` | `{id}` | employee | Cancel own pending request |
 | POST `approve` | `{id,note_hr?}` | HR | Approve |
 | POST `reject` | `{id,note_hr}` | HR | Reject (note required) |
+
+### `api/sick-leave.php`
+| Method | Params | Auth | Description |
+|--------|--------|------|-------------|
+| GET | `?action=list` | employee | Own records |
+| GET | `?action=list&stato=active&doc_status=missing&employee_id=e001` | HR | All records with filters |
+| GET | `?action=download_cert&id=<id>` | HR | Serve certificate file (inline) |
+| POST `submit` | multipart: `{data_inizio, data_fine?, medico?, certificato?}` | employee | Declare sick leave (max start = today) |
+| POST `cancel` | `{id}` | employee | Cancel (only if start ≥ today) |
+| POST `upload_cert` | multipart: `{id, certificato}` | employee | Attach/replace cert on existing record |
+| POST `mark_received` | `{id, note_hr?}` | HR | Mark physical/digital cert as received |
+| POST `close` | `{id, note_hr?}` | HR | Close sick leave (employee returned) |
