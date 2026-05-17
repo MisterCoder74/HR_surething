@@ -91,3 +91,51 @@ async function openProfileModal(){
     } finally { setLoading(btn,false); }
   });
 }
+
+
+/* ── Phase 10: Responsive sidebar toggle ─────────────────────── */
+(function(){
+  // Inject overlay element once
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+
+  const sidebar = document.querySelector('.sidebar');
+
+  // Inject hamburger button into topbar
+  const topbar = document.querySelector('.topbar');
+  if (topbar && sidebar) {
+    const ham = document.createElement('button');
+    ham.className = 'hamburger';
+    ham.setAttribute('aria-label', 'Menu');
+    ham.innerHTML = '<span></span><span></span><span></span>';
+    topbar.prepend(ham);
+    ham.addEventListener('click', () => {
+      document.body.classList.toggle('sidebar-open');
+    });
+  }
+
+  // Inject close button inside sidebar
+  if (sidebar) {
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'sidebar-close';
+    closeBtn.setAttribute('aria-label', 'Chiudi menu');
+    closeBtn.innerHTML = '&#x2715;';
+    sidebar.appendChild(closeBtn);
+    closeBtn.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-open');
+    });
+  }
+
+  // Close on overlay click
+  overlay.addEventListener('click', () => {
+    document.body.classList.remove('sidebar-open');
+  });
+
+  // Close sidebar on nav link click (mobile)
+  document.querySelectorAll('.sidebar-nav a').forEach(a => {
+    a.addEventListener('click', () => {
+      document.body.classList.remove('sidebar-open');
+    });
+  });
+})();
