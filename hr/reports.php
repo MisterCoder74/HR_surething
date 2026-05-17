@@ -2,6 +2,7 @@
 define('ROOT', __DIR__ . '/..');
 define('DATA_DIR', ROOT . '/data');
 require_once ROOT . '/auth.php';
+require_once __DIR__ . '/json_helper.php';
 require_hr();
 $cur_year  = date('Y');
 $cur_month = date('Y-m');
@@ -54,14 +55,14 @@ $cur_month = date('Y-m');
           <div id="p-loading" class="empty-state" style="display:none"><div class="spinner"></div></div>
           <div id="p-empty" class="empty-state" style="display:none">
             <div class="empty-state-icon">&#128310;</div>
-            <div class="empty-state-text">Nessun dato per il periodo selezionato</div>
+            <div class="empty-state-text">Nessun dipendente o dato per il periodo selezionato</div>
           </div>
-          <div id="p-table-wrap" style="display:none">
+          <div id="p-table-wrap" class="table-responsive" style="display:none">
             <table class="table">
               <thead><tr>
                 <th>Dipendente</th><th>Reparto</th>
-                <th>Presenza</th><th>Smartworking</th><th>Ferie</th>
-                <th>Permesso</th><th>Malattia</th><th>Assente</th><th>Totale</th>
+                <th title="Presenza">Pres.</th><th title="Smartworking">SW</th><th>Ferie</th>
+                <th>Permesso</th><th title="Malattia">Malatt.</th><th title="Assente non giustificato">Assente</th><th>Totale</th>
               </tr></thead>
               <tbody id="p-tbody"></tbody>
             </table>
@@ -89,12 +90,12 @@ $cur_month = date('Y-m');
             <div class="empty-state-icon">&#127958;&#65039;</div>
             <div class="empty-state-text">Nessun dato per l'anno selezionato</div>
           </div>
-          <div id="f-table-wrap" style="display:none">
+          <div id="f-table-wrap" class="table-responsive" style="display:none">
             <table class="table">
               <thead><tr>
                 <th>Dipendente</th><th>Reparto</th>
-                <th>Ferie Tot.</th><th>Ferie Usate</th><th>Ferie Residue</th>
-                <th>Permessi Tot.(h)</th><th>Permessi Usati(h)</th><th>Permessi Residui(h)</th>
+                <th>Ferie Tot.</th><th>Usate</th><th>Residue</th>
+                <th>Perm. Tot.(h)</th><th>Usati(h)</th><th>Residui(h)</th>
                 <th>Richieste anno</th>
               </tr></thead>
               <tbody id="f-tbody"></tbody>
@@ -123,7 +124,7 @@ $cur_month = date('Y-m');
             <div class="empty-state-icon">&#129298;</div>
             <div class="empty-state-text">Nessun episodio di malattia per l'anno selezionato</div>
           </div>
-          <div id="m-table-wrap" style="display:none">
+          <div id="m-table-wrap" class="table-responsive" style="display:none">
             <table class="table">
               <thead><tr>
                 <th>Dipendente</th><th>Reparto</th>
@@ -161,7 +162,7 @@ $cur_month = date('Y-m');
             <div class="empty-state-icon">&#128071;</div>
             <div class="empty-state-text">Nessuna richiesta per il periodo selezionato</div>
           </div>
-          <div id="sw-table-wrap" style="display:none">
+          <div id="sw-table-wrap" class="table-responsive" style="display:none">
             <table class="table">
               <thead><tr>
                 <th>Dipendente</th><th>Reparto</th>
@@ -179,15 +180,19 @@ $cur_month = date('Y-m');
 
 <script src="../app.js"></script>
 <script>
-/* ── Tabs ─────────────────────────────────────────────────────────────────── */
-document.querySelectorAll('#report-tabs .tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#report-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('#report-tabs .tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab)?.classList.add('active');
+/* ── Tabs (use global initTabs if available, otherwise local) ─────────────── */
+if (typeof initTabs === 'function') {
+  initTabs('#report-tabs');
+} else {
+  document.querySelectorAll('#report-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#report-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#report-tabs .tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab)?.classList.add('active');
+    });
   });
-});
+}
 
 function showState(prefix, state) {
   document.getElementById(prefix+'-loading').style.display    = state === 'loading' ? '' : 'none';
@@ -201,7 +206,7 @@ async function loadPresenze() {
   if (!mese) return;
   showState('p', 'loading');
   try {
-    const d = await apiFetch('../api/reports.php?action=presenze&mese='+mese);
+    const d = await apiFetch('../api/reports.php?action=presenze&mese='+encodeURIComponent(mese));
     const rows = d.data || [];
     if (!rows.length) { showState('p','empty'); return; }
     document.getElementById('p-tbody').innerHTML = rows.map(s => `
@@ -217,12 +222,12 @@ async function loadPresenze() {
         <td><strong>${s.total}</strong></td>
       </tr>`).join('');
     showState('p','table');
-  } catch(e) { showState('p','empty'); showToast(e.data?.error||'Errore caricamento','error'); }
+  } catch(e) { showState('p','empty'); showToast((e.data?.error)||'Errore caricamento','error'); }
 }
 document.getElementById('p-load-btn').addEventListener('click', loadPresenze);
 document.getElementById('p-csv-btn').addEventListener('click', () => {
   const mese = document.getElementById('p-mese').value;
-  if (mese) window.location.href = '../api/reports.php?action=presenze&mese='+mese+'&format=csv';
+  if (mese) window.open('../api/reports.php?action=presenze&mese='+encodeURIComponent(mese)+'&format=csv','_self');
 });
 loadPresenze();
 
@@ -235,9 +240,9 @@ async function loadFerie() {
     const rows = d.data || [];
     if (!rows.length) { showState('f','empty'); return; }
     document.getElementById('f-tbody').innerHTML = rows.map(s => {
-      const reqBadges = s.requests.length
-        ? s.requests.map(r => `<span class="badge badge-${r.stato||'pending'}" style="font-size:.7rem">${r.tipo==='permesso'?'P':'F'} ${r.data_inizio}</span>`).join(' ')
-        : '<span style="color:var(--text-light);font-size:.85rem">—</span>';
+      const reqBadges = s.requests && s.requests.length
+        ? s.requests.map(r => `<span class="badge badge-${r.stato||'pending'}" style="font-size:.7rem;margin:1px">${r.tipo==='permesso'?'P':'F'} ${r.data_inizio}</span>`).join('')
+        : '<span style="color:var(--color-muted);font-size:.85rem">—</span>';
       return `<tr>
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.department)}</td>
@@ -251,11 +256,11 @@ async function loadFerie() {
       </tr>`;
     }).join('');
     showState('f','table');
-  } catch(e) { showState('f','empty'); showToast(e.data?.error||'Errore caricamento','error'); }
+  } catch(e) { showState('f','empty'); showToast((e.data?.error)||'Errore caricamento','error'); }
 }
 document.getElementById('f-load-btn').addEventListener('click', loadFerie);
 document.getElementById('f-csv-btn').addEventListener('click', () => {
-  window.location.href = '../api/reports.php?action=ferie_permessi&anno='+document.getElementById('f-anno').value+'&format=csv';
+  window.open('../api/reports.php?action=ferie_permessi&anno='+document.getElementById('f-anno').value+'&format=csv','_self');
 });
 loadFerie();
 
@@ -272,18 +277,18 @@ async function loadMalattie() {
         <td>${escapeHtml(s.name)}</td>
         <td>${escapeHtml(s.department)}</td>
         <td>${formatDate(s.data_inizio)}</td>
-        <td>${s.data_fine ? formatDate(s.data_fine) : '<span style="color:var(--warning)">In corso</span>'}</td>
+        <td>${s.data_fine ? formatDate(s.data_fine) : '<span style="color:var(--color-warning)">In corso</span>'}</td>
         <td>${s.giorni_wd}</td>
         <td>${statusBadge(s.stato)}</td>
         <td>${docStatusBadge(s.doc_status)}</td>
         <td>${escapeHtml(s.medico||'—')}</td>
       </tr>`).join('');
     showState('m','table');
-  } catch(e) { showState('m','empty'); showToast(e.data?.error||'Errore caricamento','error'); }
+  } catch(e) { showState('m','empty'); showToast((e.data?.error)||'Errore caricamento','error'); }
 }
 document.getElementById('m-load-btn').addEventListener('click', loadMalattie);
 document.getElementById('m-csv-btn').addEventListener('click', () => {
-  window.location.href = '../api/reports.php?action=malattie&anno='+document.getElementById('m-anno').value+'&format=csv';
+  window.open('../api/reports.php?action=malattie&anno='+document.getElementById('m-anno').value+'&format=csv','_self');
 });
 loadMalattie();
 
@@ -295,7 +300,7 @@ document.getElementById('sw-tipo').addEventListener('change', function() {
 async function loadSW() {
   const tipo = document.getElementById('sw-tipo').value;
   const qs   = tipo === 'mese'
-    ? 'mese=' + document.getElementById('sw-mese').value
+    ? 'mese=' + encodeURIComponent(document.getElementById('sw-mese').value)
     : 'anno=' + document.getElementById('sw-anno').value;
   showState('sw','loading');
   try {
@@ -312,15 +317,15 @@ async function loadSW() {
         <td>${s.richieste - s.approvate}</td>
       </tr>`).join('');
     showState('sw','table');
-  } catch(e) { showState('sw','empty'); showToast(e.data?.error||'Errore caricamento','error'); }
+  } catch(e) { showState('sw','empty'); showToast((e.data?.error)||'Errore caricamento','error'); }
 }
 document.getElementById('sw-load-btn').addEventListener('click', loadSW);
 document.getElementById('sw-csv-btn').addEventListener('click', () => {
   const tipo = document.getElementById('sw-tipo').value;
   const qs   = tipo === 'mese'
-    ? 'mese=' + document.getElementById('sw-mese').value
+    ? 'mese=' + encodeURIComponent(document.getElementById('sw-mese').value)
     : 'anno=' + document.getElementById('sw-anno').value;
-  window.location.href = '../api/reports.php?action=smartworking&format=csv&'+qs;
+  window.open('../api/reports.php?action=smartworking&format=csv&'+qs,'_self');
 });
 loadSW();
 </script>
