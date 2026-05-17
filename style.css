@@ -148,3 +148,132 @@ tbody tr:hover{background:#f8fafc}
 .att-cal-time{font-size:.66rem;color:var(--text-light);margin-top:2px}
 .att-cal-add{font-size:.85rem;margin-top:4px;opacity:.35;transition:opacity .15s}
 .att-cal-cell[onclick]:hover .att-cal-add{opacity:.9}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Phase 10 – UI/UX Polish + Mobile Responsiveness
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Transitions & focus ─────────────────────────────────────── */
+.sidebar-nav a { transition: background .15s, color .15s, border-left-color .15s; }
+.btn { transition: background .15s, transform .08s, box-shadow .15s; }
+.btn:active { transform: scale(.97); }
+.form-control:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.card { transition: box-shadow .15s; }
+
+/* ── Table responsive wrapper ────────────────────────────────── */
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table { min-width: 500px; }
+.table thead { position: sticky; top: 0; background: var(--color-surface); z-index: 1; }
+.table thead th { border-bottom: 2px solid var(--color-primary-light); }
+.table tbody tr:hover { background: var(--color-bg); }
+
+/* ── Tab bar responsive ──────────────────────────────────────── */
+.tab-bar { display: flex; flex-wrap: wrap; gap: 4px; }
+.tab-btn { white-space: nowrap; }
+
+/* ── Print styles ────────────────────────────────────────────── */
+@media print {
+  .sidebar, .topbar, .btn, .tab-bar, .page-header p { display: none !important; }
+  .main-content { margin-left: 0 !important; padding: 0 !important; }
+  .card { border: 1px solid #ccc; box-shadow: none; }
+  .table { font-size: 11px; }
+}
+
+/* ── Hamburger button (mobile) ───────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 2px;
+  transition: transform .25s, opacity .25s;
+}
+
+/* ── Sidebar overlay (mobile) ────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 90;
+  backdrop-filter: blur(1px);
+}
+.sidebar-close {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* ══ Mobile breakpoint ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Layout: sidebar hidden off-screen */
+  :root { --sidebar-w: 220px; }
+  .app-layout {
+    grid-template-columns: 0 1fr;
+    grid-template-areas: "topbar topbar" "main main";
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    z-index: 110;
+  }
+  body.sidebar-open .sidebar   { transform: translateX(0); }
+  body.sidebar-open .sidebar-overlay { display: block; }
+
+  .sidebar-close { display: block; }
+  .hamburger     { display: flex; }
+
+  /* Topbar */
+  .main-content { margin-left: 0; padding: 16px; }
+  .topbar { padding: 0 16px; }
+  .topbar-title { font-size: .9rem; }
+  .topbar-user span { display: none; }
+
+  /* Cards & tables */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+  .card-header { flex-wrap: wrap; gap: 8px; }
+  .card-header h3 { font-size: 1rem; }
+
+  /* Table horizontal scroll inside cards */
+  .card > .table,
+  .card table { display: block; overflow-x: auto; }
+
+  /* Forms */
+  .form-group { margin-bottom: 12px; }
+  .page-header h1 { font-size: 1.25rem; }
+
+  /* Tab bar */
+  .tab-bar { gap: 2px; }
+  .tab-btn { font-size: .8rem; padding: 6px 10px; }
+
+  /* Action buttons in tables wrap */
+  .action-btns { flex-wrap: wrap; gap: 4px; }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr !important; }
+  .tab-btn { font-size: .75rem; padding: 5px 8px; }
+}
