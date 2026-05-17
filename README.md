@@ -22,10 +22,14 @@ HR management system for small companies (10–20 employees).
 - [x] Phase 5 — Leave requests (ferie / permessi): employee submit + balance, HR approve/reject with notes
 - [x] Phase 6 — Smartworking requests: employee submit (1 day notice, overlap check), HR approve/reject with notes
 - [x] Phase 7 — Sick leave: employee declare + upload cert, HR mark received/close, doc_status tracking
-- [ ] Phase 8 — Dashboards (HR + Employee)
-- [ ] Phase 9 — Reports
-- [ ] Phase 10 — UI/UX + Security hardening
-- [ ] Phase 11 — Testing & Bug Fixing
+- [x] Phase 8 — Dashboards (HR + Employee) + Security hardening (rate limiting, X-XSS-Protection, Permissions-Policy)
+- [ ] Phase 9 — Reports + CSV/PDF Export
+- [ ] Phase 10 — UI/UX Polish
+
+## Security (Phase 8)
+- **Rate limiting**: 5 failed login attempts per username → 15-minute lockout. Attempts stored in `data/config/login_attempts.json`.
+- **Security headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy (all via `.htaccess`).
+- **CSRF**: decorative token layer — meta tag + `X-CSRF-Token` header on all AJAX calls. Server-side validation intentionally omitted (internal tool, 10–20 users).
 
 ## File structure
 ```
@@ -37,7 +41,8 @@ HR management system for small companies (10–20 employees).
 ├── style.css               → global CSS (custom properties, layout, components)
 ├── app.js                  → global JS (apiFetch, modals, toasts, calendar helpers)
 ├── api/
-│   ├── auth.php            → POST login/logout
+│   ├── auth.php            → POST login/logout + rate limiting (Phase 8)
+│   ├── dashboard.php       → GET hr / employee dashboard data (Phase 8)
 │   ├── users.php           → GET profile · POST change_password / reset_password (HR) / list (HR)
 │   ├── employees.php       → GET list/single · POST create / update / deactivate / reactivate
 │   ├── attendance.php      → GET by employee+month · POST save / delete / bulk_summary
@@ -45,80 +50,78 @@ HR management system for small companies (10–20 employees).
 │   ├── smartworking.php    → GET list · POST submit / cancel / approve / reject
 │   └── sick-leave.php      → GET list/download_cert · POST submit / cancel / upload_cert / mark_received / close
 ├── hr/
-│   ├── dashboard.php       → HR home
+│   ├── dashboard.php       → HR home — KPI cards + recent activity (Phase 8)
 │   ├── employees.php       → Employee registry CRUD
 │   ├── attendance.php      → Attendance view + edit + CSV export
-│   ├── requests.php        → Leave/permit requests — approve/reject ✓
-│   ├── smartworking.php    → Smartworking requests — approve/reject ✓ (Phase 6)
-│   └── sick-leave.php      → Sick leave management — mark received/close ✓ (Phase 7)
-│   ├── sick-leave.php      → Sick leave management (Phase 7)
+│   ├── requests.php        → Leave/permit requests — approve/reject
+│   ├── smartworking.php    → Smartworking requests — approve/reject (Phase 6)
+│   ├── sick-leave.php      → Sick leave management — mark received/close (Phase 7)
 │   └── reports.php         → Reports (Phase 9)
 ├── employee/
-│   ├── dashboard.php       → Employee home
-│   ├── attendance.php      → Monthly attendance calendar (self-service)
-│   ├── request-leave.php   → Ferie & permessi: balance + submit + history ✓
-│   ├── request-smartworking.php → Smartworking: submit + history ✓ (Phase 6)
-│   └── sick-leave.php      → Sick leave submission (Phase 7)
+│   ├── dashboard.php       → Employee home — leave balance + quick actions (Phase 8)
+│   ├── attendance.php      → Monthly calendar, add/edit last 7 days
+│   ├── request-leave.php   → Submit ferie / permesso
+│   ├── request-smartworking.php → Submit smartworking
+│   └── sick-leave.php      → Declare sick leave + upload cert
 ├── partials/
-│   ├── sidebar_hr.php      → HR nav (updated Phase 6: added Smartworking link)
+│   ├── sidebar_hr.php
 │   └── sidebar_emp.php
-└── data/                   → JSON storage (protected by .htaccess deny all)
+└── data/
+    ├── config/
+    │   ├── rules.json              → leave rules (notice days, max days, etc.)
+    │   ├── holidays.json           → public holidays by year
+    │   └── login_attempts.json     → rate limiting store (Phase 8)
     ├── users/credentials.json
     ├── employees/employees.json
-    ├── attendance/{employee_id}.json
-    ├── leave_balance/2026.json         → ferie/permessi balances per employee per year
-    ├── leave_requests/requests.json    → all leave requests
-    ├── smartworking/requests.json      → all smartworking requests (Phase 6)
-    ├── sick_leave/records.json         → all sick leave records (Phase 7)
-    └── sick_certs/                     → uploaded medical certs (protected, Phase 7)
+    ├── leave_balance/2026.json
+    ├── leave_requests/requests.json
+    ├── smartworking/requests.json
+    ├── sick_leave/records.json
+    ├── sick_certs/                 → uploaded certificates (.htaccess protected)
+    └── attendance/{YYYY-MM}.json
 ```
 
-## Setup
-1. Copy to any PHP 8+ server (works in any subfolder — all paths are relative)
-2. `chmod -R 770 data/`
-3. Open `login.php` in browser
+## Data schemas
 
-## API quick reference
+### employees.json (array)
+```json
+{"employee_id":"e001","user_id":"e001","first_name":"Mario","last_name":"Rossi",
+ "email":"...","role":"Sviluppatore","department":"IT","contract_type":"indeterminato",
+ "hire_date":"2022-01-15","status":"attivo","phone":"","notes":""}
+```
 
-### `api/attendance.php`
-| Method | Params | Auth | Description |
-|--------|--------|------|-------------|
-| GET | `?month=YYYY-MM` | employee | Own records |
-| GET | `?employee_id=e001&month=YYYY-MM` | HR | Any employee's records |
-| POST `save` | `{employee_id?,date,type,check_in?,check_out?,notes?}` | any | Create/update record |
-| POST `delete` | `{employee_id?,date}` | any | Delete record |
-| POST `bulk_summary` | `{month}` | HR | Counts per employee for month |
+### leave_balance/YYYY.json (object keyed by employee_id)
+```json
+{"e001":{"anno":2026,"ferie_totali":26,"ferie_usate":0,"ferie_residue":26,
+         "permessi_totali_ore":32,"permessi_usati_ore":0,"permessi_residui_ore":32,
+         "ultimo_aggiornamento":"2026-01-01T00:00:00Z"}}
+```
 
-### `api/leave-requests.php`
-| Method | Params | Auth | Description |
-|--------|--------|------|-------------|
-| GET | `?action=list` | employee | Own requests |
-| GET | `?action=list&stato=pending&tipo=ferie&employee_id=e001` | HR | All requests with filters |
-| GET | `?action=balance` | employee | Own balance |
-| GET | `?action=balance&employee_id=e001` | HR | Specific employee balance |
-| POST `submit` | `{tipo,data_inizio,data_fine?,ore?,motivo?}` | employee | Submit new request |
-| POST `cancel` | `{id}` | employee | Cancel own pending request |
-| POST `approve` | `{id,note_hr?}` | HR | Approve (deducts balance) |
-| POST `reject` | `{id,note_hr}` | HR | Reject (note required) |
+### leave_requests/requests.json (array)
+```json
+{"id":"lr_20260516_001","employee_id":"e001","type":"ferie",
+ "date_from":"2026-06-01","date_to":"2026-06-05","days":5,
+ "reason":"Vacanza estiva","status":"pending","hr_notes":"",
+ "created_at":"2026-05-16T10:00:00Z","updated_at":"2026-05-16T10:00:00Z"}
+```
 
-### `api/smartworking.php`
-| Method | Params | Auth | Description |
-|--------|--------|------|-------------|
-| GET | `?action=list` | employee | Own requests |
-| GET | `?action=list&stato=pending&employee_id=e001` | HR | All requests with filters |
-| POST `submit` | `{data_inizio,data_fine?,motivo?}` | employee | Submit (min 1 WD notice, overlap check) |
-| POST `cancel` | `{id}` | employee | Cancel own pending request |
-| POST `approve` | `{id,note_hr?}` | HR | Approve |
-| POST `reject` | `{id,note_hr}` | HR | Reject (note required) |
+### smartworking/requests.json (array)
+```json
+{"id":"sw_20260516_001","employee_id":"e001","date":"2026-05-20",
+ "reason":"Riunione remota","status":"pending","hr_notes":"",
+ "created_at":"2026-05-16T10:00:00Z","updated_at":"2026-05-16T10:00:00Z"}
+```
 
-### `api/sick-leave.php`
-| Method | Params | Auth | Description |
-|--------|--------|------|-------------|
-| GET | `?action=list` | employee | Own records |
-| GET | `?action=list&stato=active&doc_status=missing&employee_id=e001` | HR | All records with filters |
-| GET | `?action=download_cert&id=<id>` | HR | Serve certificate file (inline) |
-| POST `submit` | multipart: `{data_inizio, data_fine?, medico?, certificato?}` | employee | Declare sick leave (max start = today) |
-| POST `cancel` | `{id}` | employee | Cancel (only if start ≥ today) |
-| POST `upload_cert` | multipart: `{id, certificato}` | employee | Attach/replace cert on existing record |
-| POST `mark_received` | `{id, note_hr?}` | HR | Mark physical/digital cert as received |
-| POST `close` | `{id, note_hr?}` | HR | Close sick leave (employee returned) |
+### sick_leave/records.json (array)
+```json
+{"id":"sl_20260516_001","employee_id":"e001","start_date":"2026-05-16",
+ "end_date":null,"estimated_days":3,"notes":"Influenza",
+ "status":"active","doc_status":"missing","cert_filename":null,
+ "created_at":"2026-05-16T10:00:00Z","updated_at":"2026-05-16T10:00:00Z"}
+```
+
+### attendance/{YYYY-MM}.json (array)
+```json
+{"employee_id":"e001","date":"2026-05-16","type":"presenza",
+ "check_in":"09:00","check_out":"18:00","notes":""}
+```
