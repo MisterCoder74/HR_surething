@@ -19,7 +19,7 @@ if (file_exists($emp_file)) {
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="csrf-token" content="<?= csrf_token() ?>">
   <title>Malattie - Mini HR</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../style.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="app-layout">
@@ -83,7 +83,7 @@ if (file_exists($emp_file)) {
     </div>
   </main>
 </div>
-<script src="../app.js"></script>
+<script src="../app.js?v=<?php echo time(); ?>"></script>
 <script>
 const API  = '../api/sick-leave.php';
 const EMAP = <?= json_encode($emp_map, JSON_UNESCAPED_UNICODE) ?>;
