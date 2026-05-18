@@ -1,6 +1,6 @@
 <?php
 /**
- * api/reports.php — Reports & CSV Export. Phase 9 (fixed Phase 10).
+ * api/reports.php — Reports & CSV Export. Phase 9 + Phase 10 bugfix.
  * HR only.
  *
  * GET ?action=presenze&mese=2026-05[&format=csv]
@@ -8,7 +8,7 @@
  * GET ?action=malattie&anno=2026[&format=csv]
  * GET ?action=smartworking&anno=2026[&mese=2026-05][&format=csv]
  */
-ob_start(); // Buffer any accidental PHP notices/warnings so headers can still be sent
+ob_start(); // capture any stray PHP notices so CSV headers can still be sent
 
 define('ROOT', __DIR__ . '/..');
 define('DATA_DIR', ROOT . '/data');
@@ -22,49 +22,49 @@ $mese   = preg_replace('/[^0-9-]/', '', $_GET['mese'] ?? date('Y-m'));
 $anno   = preg_replace('/[^0-9]/',  '', $_GET['anno'] ?? date('Y'));
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
-function rpt_employees(): array {
-    $data = read_json(data_path('employees', 'employees.json'));
-    // Handle both flat array and keyed-by-id associative array
-    if (!empty($data) && isset(array_values($data)[0]) && is_array(array_values($data)[0])) {
-        return array_values($data);
-    }
-    return $data;
-}
 
+/** Build employee_id → record map from employees.json */
 function rpt_emp_map(): array {
     $m = [];
-    foreach (rpt_employees() as $e) {
-        if (!empty($e['employee_id'])) {
-            $m[$e['employee_id']] = $e;
-        }
+    foreach (read_json(data_path('employees', 'employees.json')) as $e) {
+        $eid = $e['employee_id'] ?? '';
+        if ($eid) $m[$eid] = $e;
     }
     return $m;
 }
 
-function rpt_load_att(string $eid): array {
-    $f = data_path('attendance', preg_replace('/[^a-z0-9_-]/i', '', $eid) . '.json');
-    return file_exists($f) ? read_json($f) : [];
+/** emp name from map (fallback to eid) */
+function rpt_name(string $eid, array $empMap): string {
+    $e = $empMap[$eid] ?? [];
+    return trim(($e['first_name'] ?? '') . ' ' . ($e['last_name'] ?? '')) ?: $eid;
+}
+function rpt_dept(string $eid, array $empMap): string {
+    return $empMap[$eid]['department'] ?? '';
 }
 
+/** CSV response — clears ALL output buffers before sending headers */
 function rpt_csv(array $headers, array $rows, string $filename): void {
-    // Discard any buffered output (PHP notices, warnings) so headers can be sent cleanly
-    if (ob_get_level()) ob_end_clean();
-
+    while (ob_get_level() > 0) ob_end_clean();
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . basename($filename) . '"');
     header('Cache-Control: no-store, no-cache, must-revalidate');
-    header('Pragma: no-cache');
-
     $out = fopen('php://output', 'w');
     fputs($out, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
     fputcsv($out, $headers, ';');
-    foreach ($rows as $row) {
-        fputcsv($out, array_values((array)$row), ';');
-    }
+    foreach ($rows as $row) fputcsv($out, array_values((array)$row), ';');
     fclose($out);
     exit;
 }
 
+/** JSON response — clears ALL output buffers before sending */
+function rpt_json(array $payload): void {
+    while (ob_get_level() > 0) ob_end_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/** Business days between two dates */
 function rpt_wd(string $start, ?string $end): int {
     if (!$start) return 0;
     try {
@@ -76,25 +76,38 @@ function rpt_wd(string $start, ?string $end): int {
     } catch (\Exception $ex) { return 0; }
 }
 
-/* ── PRESENZE MENSILI ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   PRESENZE MENSILI
+   Primary source: data/attendance/{eid}.json  (one file per employee)
+   Falls back gracefully if employees.json missing.
+   ══════════════════════════════════════════════════════════════════════════ */
 if ($action === 'presenze') {
-    $types = ['presenza','smartworking','ferie','permesso','malattia','assente_non_giustificato'];
-    $rows  = [];
-    foreach (rpt_employees() as $emp) {
-        $eid  = $emp['employee_id'] ?? '';
-        if (!$eid) continue;
-        $recs = array_filter(rpt_load_att($eid),
-            fn($r) => str_starts_with($r['date'] ?? '', $mese));
-        $cnt  = array_fill_keys($types, 0);
-        foreach ($recs as $r) {
-            $t = $r['type'] ?? '';
-            if (isset($cnt[$t])) $cnt[$t]++;
+    $empMap = rpt_emp_map();
+    $types  = ['presenza','smartworking','ferie','permesso','malattia','assente_non_giustificato'];
+    $rows   = [];
+
+    // Collect all employee IDs: from employees list + from attendance files
+    $eids = array_keys($empMap);
+    $att_dir = data_path('attendance');
+    if (is_dir($att_dir)) {
+        foreach (glob($att_dir . '/*.json') ?: [] as $f) {
+            $eid = basename($f, '.json');
+            if (!in_array($eid, $eids, true)) $eids[] = $eid;
         }
+    }
+    sort($eids);
+
+    foreach ($eids as $eid) {
+        $att_file = data_path('attendance', preg_replace('/[^a-z0-9_-]/i', '', $eid) . '.json');
+        $recs = file_exists($att_file)
+            ? array_filter(read_json($att_file), fn($r) => str_starts_with($r['date'] ?? '', $mese))
+            : [];
+        $cnt = array_fill_keys($types, 0);
+        foreach ($recs as $r) { $t = $r['type'] ?? ''; if (isset($cnt[$t])) $cnt[$t]++; }
         $rows[] = [
             'employee_id' => $eid,
-            'name'        => trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')),
-            'department'  => $emp['department'] ?? '',
-            'status'      => $emp['status'] ?? '',
+            'name'        => rpt_name($eid, $empMap),
+            'department'  => rpt_dept($eid, $empMap),
             'counts'      => $cnt,
             'total'       => array_sum($cnt),
         ];
@@ -110,30 +123,38 @@ if ($action === 'presenze') {
         ], $rows);
         rpt_csv($hdr, $csv, 'presenze_' . $mese . '.csv');
     }
-
-    if (ob_get_level()) ob_end_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['mese' => $mese, 'data' => $rows], JSON_UNESCAPED_UNICODE);
-    exit;
+    rpt_json(['mese' => $mese, 'data' => $rows]);
 }
 
-/* ── FERIE & PERMESSI ────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   FERIE & PERMESSI
+   Primary source: data/leave_requests/requests.json + leave_balance/{anno}.json
+   Iterates over unique employee IDs found in requests + balances (not employees.json).
+   ══════════════════════════════════════════════════════════════════════════ */
 if ($action === 'ferie_permessi') {
     $empMap   = rpt_emp_map();
     $allReqs  = read_json(data_path('leave_requests', 'requests.json'));
-    $reqs     = array_filter($allReqs,
-        fn($r) => str_starts_with($r['data_inizio'] ?? '', $anno));
     $balances = read_json(data_path('leave_balance', $anno . '.json'));
 
+    // Collect all employee IDs from requests + balances + employees
+    $eids = array_unique(array_merge(
+        array_keys($empMap),
+        array_keys($balances),
+        array_column(array_filter($allReqs, fn($r) => str_starts_with($r['data_inizio'] ?? '', $anno)), 'employee_id')
+    ));
+    sort($eids);
+
     $rows = [];
-    foreach ($empMap as $eid => $emp) {
-        $bal     = is_array($balances[$eid] ?? null) ? $balances[$eid] : [];
-        $empReqs = array_values(array_filter($reqs, fn($r) => ($r['employee_id'] ?? '') === $eid));
+    foreach ($eids as $eid) {
+        if (!$eid) continue;
+        $bal      = is_array($balances[$eid] ?? null) ? $balances[$eid] : [];
+        $empReqs  = array_values(array_filter($allReqs,
+            fn($r) => ($r['employee_id'] ?? '') === $eid && str_starts_with($r['data_inizio'] ?? '', $anno)));
         usort($empReqs, fn($a,$b) => strcmp($a['data_inizio'] ?? '', $b['data_inizio'] ?? ''));
         $rows[] = [
             'employee_id'          => $eid,
-            'name'                 => trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')),
-            'department'           => $emp['department'] ?? '',
+            'name'                 => rpt_name($eid, $empMap),
+            'department'           => rpt_dept($eid, $empMap),
             'ferie_totali'         => $bal['ferie_totali']         ?? 0,
             'ferie_usate'          => $bal['ferie_usate']          ?? 0,
             'ferie_residue'        => $bal['ferie_residue']        ?? 0,
@@ -153,14 +174,13 @@ if ($action === 'ferie_permessi') {
         ], $rows);
         rpt_csv($hdr, $csv, 'ferie_permessi_' . $anno . '.csv');
     }
-
-    if (ob_get_level()) ob_end_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['anno' => $anno, 'data' => $rows], JSON_UNESCAPED_UNICODE);
-    exit;
+    rpt_json(['anno' => $anno, 'data' => $rows]);
 }
 
-/* ── MALATTIE ────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   MALATTIE
+   Primary source: data/sick_leave/records.json
+   ══════════════════════════════════════════════════════════════════════════ */
 if ($action === 'malattie') {
     $empMap  = rpt_emp_map();
     $records = array_values(array_filter(
@@ -170,12 +190,12 @@ if ($action === 'malattie') {
     usort($records, fn($a,$b) => strcmp($b['data_inizio'] ?? '', $a['data_inizio'] ?? ''));
 
     $rows = array_map(function($r) use ($empMap) {
-        $emp = $empMap[$r['employee_id'] ?? ''] ?? [];
+        $eid = $r['employee_id'] ?? '';
         return [
             'id'          => $r['id']          ?? '',
-            'employee_id' => $r['employee_id'] ?? '',
-            'name'        => trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')),
-            'department'  => $emp['department']  ?? '',
+            'employee_id' => $eid,
+            'name'        => rpt_name($eid, $empMap),
+            'department'  => rpt_dept($eid, $empMap),
             'data_inizio' => $r['data_inizio']  ?? '',
             'data_fine'   => $r['data_fine']    ?? null,
             'giorni_wd'   => rpt_wd($r['data_inizio'] ?? '', $r['data_fine'] ?? null),
@@ -194,34 +214,44 @@ if ($action === 'malattie') {
         ], $rows);
         rpt_csv($hdr, $csv, 'malattie_' . $anno . '.csv');
     }
-
-    if (ob_get_level()) ob_end_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['anno' => $anno, 'data' => $rows], JSON_UNESCAPED_UNICODE);
-    exit;
+    rpt_json(['anno' => $anno, 'data' => $rows]);
 }
 
-/* ── SMARTWORKING ────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   SMARTWORKING
+   Primary source: data/smartworking/requests.json
+   ══════════════════════════════════════════════════════════════════════════ */
 if ($action === 'smartworking') {
-    $empMap   = rpt_emp_map();
-    $allReqs  = read_json(data_path('smartworking', 'requests.json'));
-    $useMese  = !empty($_GET['mese']);
-    $period   = $useMese ? $mese : $anno;
+    $empMap  = rpt_emp_map();
+    $allReqs = read_json(data_path('smartworking', 'requests.json'));
+    $useMese = !empty($_GET['mese']);
+    $period  = $useMese ? $mese : $anno;
     $filtered = array_filter($allReqs, fn($r) => str_starts_with($r['data_inizio'] ?? '', $period));
 
+    // Group by employee
+    $byEmp = [];
+    foreach ($filtered as $r) {
+        $eid = $r['employee_id'] ?? '';
+        if (!$eid) continue;
+        $byEmp[$eid][] = $r;
+    }
+    // Also include employees with no requests (from empMap)
+    foreach (array_keys($empMap) as $eid) {
+        if (!isset($byEmp[$eid])) $byEmp[$eid] = [];
+    }
+
     $rows = [];
-    foreach ($empMap as $eid => $emp) {
-        $empReqs  = array_values(array_filter($filtered, fn($r) => ($r['employee_id'] ?? '') === $eid));
+    foreach ($byEmp as $eid => $empReqs) {
         $approved = array_filter($empReqs, fn($r) => ($r['stato'] ?? '') === 'approved');
         $ggTot    = array_sum(array_map(fn($r) => (int)($r['giorni'] ?? 0), $approved));
         $rows[] = [
             'employee_id'   => $eid,
-            'name'          => trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')),
-            'department'    => $emp['department'] ?? '',
+            'name'          => rpt_name($eid, $empMap),
+            'department'    => rpt_dept($eid, $empMap),
             'totale_giorni' => $ggTot,
             'richieste'     => count($empReqs),
             'approvate'     => count($approved),
-            'requests'      => $empReqs,
+            'requests'      => array_values($empReqs),
         ];
     }
     usort($rows, fn($a,$b) => $b['totale_giorni'] - $a['totale_giorni']);
@@ -234,14 +264,7 @@ if ($action === 'smartworking') {
         ], $rows);
         rpt_csv($hdr, $csv, 'smartworking_' . $period . '.csv');
     }
-
-    if (ob_get_level()) ob_end_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['periodo' => $period, 'data' => $rows], JSON_UNESCAPED_UNICODE);
-    exit;
+    rpt_json(['periodo' => $period, 'data' => $rows]);
 }
 
-if (ob_get_level()) ob_end_clean();
-header('Content-Type: application/json; charset=utf-8');
-http_response_code(400);
-echo json_encode(['error' => 'Azione non valida'], JSON_UNESCAPED_UNICODE);
+rpt_json(['error' => 'Azione non valida']);
