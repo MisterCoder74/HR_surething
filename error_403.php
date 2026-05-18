@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <title>403 - Accesso Negato</title>
-  <link rel="stylesheet" href="<?= ROOT_PREFIX ?>style.css">
+  <link rel="stylesheet" href="<?= ROOT_PREFIX ?>style.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="login-page">
