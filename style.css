@@ -240,7 +240,7 @@ tbody tr:hover{background:#f8fafc}
     transition: transform .28s cubic-bezier(.4,0,.2,1);
     z-index: 110;
   }
-  body.sidebar-open .sidebar   { transform: translateX(0); }
+  body.sidebar-open .sidebar   { display: flex; transform: translateX(0); }
   body.sidebar-open .sidebar-overlay { display: block; }
 
   .sidebar-close { display: block; }
