@@ -12,7 +12,7 @@ $cur_month = date('Y-m');
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?= csrf_token() ?>">
   <title>Report HR - Mini HR</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../style.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="app-layout">
@@ -177,7 +177,7 @@ $cur_month = date('Y-m');
   </main>
 </div>
 
-<script src="../app.js"></script>
+<script src="../app.js?v=<?php echo time(); ?>"></script>
 <script>
 /* ── Tabs (use global initTabs if available, otherwise local) ─────────────── */
 if (typeof initTabs === 'function') {
