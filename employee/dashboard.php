@@ -6,6 +6,17 @@ define('ROOT', __DIR__ . '/..');
 define('DATA_DIR', ROOT . '/data');
 require_once ROOT . '/auth.php';
 require_employee();
+require_once ROOT . '/api/json_helper.php';
+// Load current employee record for topbar display
+$_emp_rec = [];
+foreach (read_json(data_path('employees', 'employees.json')) as $_e) {
+    if (($_e['employee_id'] ?? '') === get_employee_id()) { $_emp_rec = $_e; break; }
+}
+$_emp_fn = $_emp_rec['first_name'] ?? '';
+$_emp_ln = $_emp_rec['last_name']  ?? '';
+$_emp_display  = trim("$_emp_fn $_emp_ln");
+$_emp_initials = strtoupper(substr($_emp_fn, 0, 1) . substr($_emp_ln, 0, 1)) ?: 'ME';
+
 ?><!DOCTYPE html>
 <html lang="it">
 <head>
@@ -20,9 +31,9 @@ require_employee();
   <?php include ROOT . '/partials/sidebar_emp.php'; ?>
   <header class="topbar">
     <span class="topbar-title">La Mia Dashboard</span>
-    <div class="topbar-user">
-      <span><?= htmlspecialchars(get_employee_id()) ?></span>
-      <div class="avatar">ME</div>
+        <div class="topbar-user">
+      <span><?= htmlspecialchars(get_employee_id()) ?><?= $_emp_display ? ' – ' . htmlspecialchars($_emp_display) : '' ?></span>
+      <div class="avatar"><?= htmlspecialchars($_emp_initials) ?></div>
       <a href="../logout.php" class="btn btn-secondary btn-sm">Esci</a>
     </div>
   </header>
