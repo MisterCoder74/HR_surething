@@ -21,7 +21,7 @@ $_emp_initials = strtoupper(substr($_emp_fn, 0, 1) . substr($_emp_ln, 0, 1)) ?: 
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="csrf-token" content="<?= csrf_token() ?>">
   <title>Malattia - Mini HR</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../style.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="app-layout">
@@ -110,7 +110,7 @@ $_emp_initials = strtoupper(substr($_emp_fn, 0, 1) . substr($_emp_ln, 0, 1)) ?: 
 </div>
 
 <!-- Upload cert modal (inline) -->
-<script src="../app.js"></script>
+<script src="../app.js?v=<?php echo time(); ?>"></script>
 <script>
 const API = '../api/sick-leave.php';
 const today = new Date().toISOString().slice(0,10);
