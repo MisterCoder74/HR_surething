@@ -25,6 +25,7 @@ HR management system for small companies (10–20 employees).
 - [x] Phase 8 — Dashboards HR + Employee + Security Hardening (rate limiting, HTTP headers)
 - [x] Phase 9 — Reports + CSV Export: presenze mensili, ferie/permessi, malattie, smartworking; dashboard field-name bug fixed
 - [x] Phase 10 — UI/UX Polish: mobile responsiveness (hamburger + overlay sidebar), table horizontal scroll, tab bar wrapping, sticky table headers, print styles, smooth transitions, CSV ob_start bug fix
+- [x] Phase 11 — Post Production: cache busting (`?v=<?php echo time(); ?>`) on all CSS/JS asset links in 14 PHP files; `cache: 'no-store'` added to `apiFetch()` in `app.js` to prevent stale API responses
 
 ## File structure
 ```
