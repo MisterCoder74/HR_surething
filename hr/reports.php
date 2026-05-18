@@ -2,7 +2,6 @@
 define('ROOT', __DIR__ . '/..');
 define('DATA_DIR', ROOT . '/data');
 require_once ROOT . '/auth.php';
-require_once __DIR__ . '/json_helper.php';
 require_hr();
 $cur_year  = date('Y');
 $cur_month = date('Y-m');
