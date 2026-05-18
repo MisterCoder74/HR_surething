@@ -1,7 +1,7 @@
 /* Mini HR Vanilla - app.js | Phase 0 */
 const getCsrfToken=()=>document.querySelector('meta[name="csrf-token"]')?.content??'';
 async function apiFetch(url,method='GET',body=null){
-  const o={method,headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':getCsrfToken()}};
+  const o={method,cache:'no-store',headers:{'X-Requested-With':'XMLHttpRequest','X-CSRF-Token':getCsrfToken()}};
   if(body!==null){if(body instanceof FormData)o.body=body;else{o.headers['Content-Type']='application/json';o.body=JSON.stringify(body);}}
   try{const r=await fetch(url,o);const t=await r.text();let d;try{d=JSON.parse(t);}catch{d={raw:t};}if(!r.ok)throw{status:r.status,data:d};return d;}
   catch(e){if(e.status)throw e;throw{status:0,data:{error:'Errore di connessione'}};}
